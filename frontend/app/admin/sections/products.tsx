@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Page, staffApi } from "@/lib/staff-api";
 import { ThemedSelect } from "@/app/components/themed-select";
+import { ImageUploadPreview } from "../image-upload-preview";
 
 type Category = { id: number; name: string; kind: string; parent: number | null };
 type Product = { id: number; name: string; slug: string; description: string; image: string; category: number; category_name: string; price_per_unit: string; unit: string; fish_type: string; available_quantity: string; minimum_quantity: string; quantity_step: string; is_active: boolean; is_featured: boolean };
@@ -90,8 +91,7 @@ function ProductForm({ product, categories, roots, busy, onCancel, onSubmit }: {
     <input type="hidden" name="id" value={product?.id ?? ""} />
     <label className="span-two">Product name<input name="name" required defaultValue={product?.name ?? ""} placeholder="e.g. Wild caught seer fish" /></label>
     <label className="span-two">Description<textarea name="description" rows={3} defaultValue={product?.description ?? ""} placeholder="Tell customers what makes this product special" /></label>
-    <label className="span-two">Product image<input name="image" type="file" accept="image/jpeg,image/png,image/webp" required={!product} /></label>
-    {product?.image && <div className="image-preview span-two"><img src={productImageUrl(product.image)} alt="Current product" loading="lazy" decoding="async" /><small>Current image · Choose a file above to replace it</small></div>}
+    <ImageUploadPreview name="image" label="Product image" alt={product?.name ?? "Product image preview"} currentImage={product?.image} required={!product} />
     <label>Category<ThemedSelect name="category" value={categoryId} onValueChange={(selectedId) => { setCategoryId(selectedId); const choice = categories.find((item) => item.id === Number(selectedId)); const choiceRoot = choice?.parent ? roots.find((item) => item.id === choice.parent) : choice; const fish = choiceRoot?.kind === "fish"; setUnit(fish ? "kg" : "each"); setMinimum(fish ? "0.5" : "1"); setStep(fish ? "0.5" : "1"); }} options={[{ value: "", label: "Choose category" }, ...categories.map((item) => ({ value: String(item.id), label: item.parent ? `↳ ${item.name}` : item.name }))]} /></label>
     <label>Price per {unit === "kg" ? "kg" : "item"}<input name="price_per_unit" type="number" min="0.01" step="0.01" required defaultValue={product?.price_per_unit ?? ""} /></label>
     <label>Pricing unit<ThemedSelect name="unit" value={unit} onValueChange={setUnit} disabled={isFish} options={[{ value: "kg", label: "Kilogram" }, { value: "each", label: "Each" }]} />{isFish && <small>Fish products are always priced and stocked by kilogram.</small>}</label>

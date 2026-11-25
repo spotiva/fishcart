@@ -10,7 +10,10 @@ import { ThemedSelect } from "./components/themed-select";
 import { MachliBrand } from "./components/machli-brand";
 
 const money = (value: string | number) => `₹${Number(value).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
-const ADMIN_WHATSAPP_NUMBER = "9207069066";
+const configuredAdminWhatsAppNumber = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_NUMBER?.replace(/\D/g, "") || "";
+const ADMIN_WHATSAPP_NUMBER = /^[1-9]\d{7,14}$/.test(configuredAdminWhatsAppNumber)
+  ? configuredAdminWhatsAppNumber
+  : "";
 const localInputValue = (date: Date) => { const adjusted = new Date(date.getTime() - date.getTimezoneOffset() * 60000); return adjusted.toISOString().slice(0, 16); };
 type DeliveryArea = { latitude: number | null; longitude: number | null; max_delivery_distance_km: string; free_delivery_km: string; delivery_fee_per_km: string; configured: boolean };
 type DeliveryQuote = { distance_km: string; free_delivery_km: string; billable_distance_km: string; delivery_fee_per_km: string; delivery_fee: string | null; max_delivery_distance_km: string; eligible: boolean; configured: boolean; market_coordinates: MapPoint; delivery_coordinates: MapPoint };
@@ -117,7 +120,9 @@ export default function Checkout() {
         ...(coordinatesText ? [`Map: https://www.openstreetmap.org/?mlat=${destination.latitude}&mlon=${destination.longitude}#map=15/${destination.latitude}/${destination.longitude}`] : []),
         ...(placed.customer_note ? [`Note: ${placed.customer_note}`] : []),
       ].join("\n").slice(0, 3500);
-      setOrderWhatsAppUrl(`https://wa.me/${ADMIN_WHATSAPP_NUMBER}?${new URLSearchParams({ text: message }).toString()}`);
+      setOrderWhatsAppUrl(ADMIN_WHATSAPP_NUMBER
+        ? `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?${new URLSearchParams({ text: message }).toString()}`
+        : "");
       setOrderId(placed.id); setCart(null);
     } catch (err) { setError(err instanceof Error ? err.message : "We could not place your order."); }
     finally { setSubmitting(false); }

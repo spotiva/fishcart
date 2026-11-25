@@ -105,7 +105,8 @@ For Docker Compose, put these values in the project-root `.env`:
 POSTGRES_DB=fish_ecommerce
 POSTGRES_USER=fish_ecommerce
 POSTGRES_PASSWORD=<unique-database-password>
-NEXT_PUBLIC_STORE_PHONE=9539833135
+NEXT_PUBLIC_STORE_PHONE=<public-store-phone>
+NEXT_PUBLIC_ADMIN_WHATSAPP_NUMBER=<admin-WhatsApp-number-with-country-code>
 NEXT_PUBLIC_SITE_URL=https://your-store-domain.example
 ```
 

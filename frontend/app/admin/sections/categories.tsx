@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Page, staffApi } from "@/lib/staff-api";
 import { Pager } from "./products";
 import { ThemedSelect } from "@/app/components/themed-select";
+import { ImageUploadPreview } from "../image-upload-preview";
 
 type Category = { id: number; name: string; slug: string; kind: string; parent: number | null; parent_name: string | null; description: string; image: string; gst_rate: string; is_active: boolean; sort_order: number };
 export default function CategoriesPage({ onError }: { onError: (message: string) => void }) {
@@ -56,7 +57,7 @@ export default function CategoriesPage({ onError }: { onError: (message: string)
       <label>Category kind<ThemedSelect name="kind" defaultValue={editing?.kind ?? "fish"} options={[{ value: "fish", label: "Fish" }, { value: "pickle", label: "Pickles" }, { value: "other", label: "Other" }]} /></label>
       <label>GST rate (%)<input name="gst_rate" type="number" min="0" max="100" step="0.01" required defaultValue={editing?.gst_rate ?? "0.00"} /><small>Use 0 for nil rated items; confirm each product classification before charging GST.</small></label>
       <label className="span-two">Description<textarea name="description" rows={3} defaultValue={editing?.description ?? ""} /></label>
-      <label className="span-two">Category image<input type="file" name="image" accept="image/jpeg,image/png,image/webp" /></label>
+      <ImageUploadPreview name="image" label="Category image" alt={editing?.name ?? "Category image preview"} currentImage={editing?.image} />
       <label>Display order<input name="sort_order" type="number" min="0" defaultValue={editing?.sort_order ?? 0} /></label>
       <label className="check-label"><input name="is_active" type="checkbox" defaultChecked={editing?.is_active ?? true} /> Active in storefront</label>
       <div className="form-footer span-two"><button type="button" className="secondary-button" onClick={() => setModal(false)}>Cancel</button><button className="primary-button" disabled={busy}>{busy ? "Saving…" : "Save category"}</button></div>
