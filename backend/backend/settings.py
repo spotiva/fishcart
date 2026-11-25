@@ -8,6 +8,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import parse_qsl, urlparse
 
 from dotenv import load_dotenv
 
@@ -120,47 +121,68 @@ WSGI_APPLICATION = "backend.wsgi.application"
 
 # Database
 DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").lower()
+DB_PROVIDER = os.getenv("DB_PROVIDER", "standard").strip().lower()
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "")
+DB_CONN_MAX_AGE = int(os.getenv("DB_CONN_MAX_AGE", "60"))
 
 if not DEBUG and DB_ENGINE != "postgres":
     raise ValueError("Production DB_ENGINE must be postgres")
 
-required_postgres_variables = (
-    "POSTGRES_DB",
-    "POSTGRES_USER",
-    "POSTGRES_HOST",
-    "POSTGRES_PASSWORD",
-)
+if DB_ENGINE == "postgres" and DB_PROVIDER not in {"standard", "neon"}:
+    raise ValueError("DB_PROVIDER must be either 'standard' or 'neon'.")
 
-if not DEBUG and any(not os.getenv(name) for name in required_postgres_variables):
-    raise ValueError(
-        "Production PostgreSQL database name, user, host, and password "
-        "must be explicitly configured"
+if DB_ENGINE == "postgres" and DB_PROVIDER == "standard":
+    required_postgres_variables = (
+        "POSTGRES_DB",
+        "POSTGRES_USER",
+        "POSTGRES_HOST",
+        "POSTGRES_PASSWORD",
     )
 
-if not DEBUG and (
-    len(POSTGRES_PASSWORD) < 16
-    or POSTGRES_PASSWORD.startswith(("replace-with-", "local-dev-"))
-):
-    raise ValueError("Production POSTGRES_PASSWORD must be a unique value of at least 16 characters")
+    if not DEBUG and any(not os.getenv(name) for name in required_postgres_variables):
+        raise ValueError(
+            "Production PostgreSQL database name, user, host, and password "
+            "must be explicitly configured"
+        )
+
+    if not DEBUG and (
+        len(POSTGRES_PASSWORD) < 16
+        or POSTGRES_PASSWORD.startswith(("replace-with-", "local-dev-"))
+    ):
+        raise ValueError("Production POSTGRES_PASSWORD must be a unique value of at least 16 characters")
 
 if DB_ENGINE == "postgres":
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("POSTGRES_DB", "fish_ecommerce"),
-            "USER": os.getenv("POSTGRES_USER", "fish_ecommerce"),
-            "PASSWORD": POSTGRES_PASSWORD,
-            "HOST": os.getenv("POSTGRES_HOST", "localhost"),
-            "PORT": os.getenv("POSTGRES_PORT", "5432"),
-            "CONN_MAX_AGE": int(os.getenv("DB_CONN_MAX_AGE", "60")),
-            "OPTIONS": {
-                "sslmode": os.getenv(
-                    "POSTGRES_SSLMODE", "prefer" if DEBUG else "require"
-                ),
+    if DB_PROVIDER == "neon":
+        tmpPostgres = urlparse(os.getenv("DATABASE_URL", ""))
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": tmpPostgres.path.replace("/", ""),
+                "USER": tmpPostgres.username,
+                "PASSWORD": tmpPostgres.password,
+                "HOST": tmpPostgres.hostname,
+                "PORT": 5432,
+                "CONN_MAX_AGE": DB_CONN_MAX_AGE,
+                "OPTIONS": dict(parse_qsl(tmpPostgres.query)),
+            }
+        }
+    else:
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": os.getenv("POSTGRES_DB", "fish_ecommerce"),
+                "USER": os.getenv("POSTGRES_USER", "fish_ecommerce"),
+                "PASSWORD": POSTGRES_PASSWORD,
+                "HOST": os.getenv("POSTGRES_HOST", "localhost"),
+                "PORT": os.getenv("POSTGRES_PORT", "5432"),
+                "CONN_MAX_AGE": DB_CONN_MAX_AGE,
+                "OPTIONS": {
+                    "sslmode": os.getenv(
+                        "POSTGRES_SSLMODE", "prefer" if DEBUG else "require"
+                    ),
+                },
             },
-        },
-    }
+        }
 else:
     DATABASES = {
         "default": {
