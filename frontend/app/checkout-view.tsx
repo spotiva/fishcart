@@ -7,7 +7,7 @@ import { AuthDialog } from "./customer-auth";
 import { Coordinates, LocationMapPicker } from "./components/map-picker";
 import { DeliveryMapPreview, MapPoint } from "./components/delivery-map-preview";
 import { ThemedSelect } from "./components/themed-select";
-import { ThattBrand } from "./components/thatt-brand";
+import { MachliBrand } from "./components/machli-brand";
 
 const money = (value: string | number) => `₹${Number(value).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 const ADMIN_WHATSAPP_NUMBER = "9207069066";
@@ -104,7 +104,7 @@ export default function Checkout() {
         ? `Preorder for ${new Date(placed.scheduled_for).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}`
         : "Order now";
       const message = [
-        `Hello തട്ട്, I just placed order #${placed.id}.`,
+        `Hello machli, I just placed order #${placed.id}.`,
         `Customer: ${placed.username} · ${placed.email}${placed.phone_number ? ` · ${placed.phone_number}` : ""}`,
         `Type: ${fulfillmentText}`,
         "Items:", orderItems,
@@ -123,9 +123,9 @@ export default function Checkout() {
     finally { setSubmitting(false); }
   }
   if (loading) return <main className="checkout-page"><div className="catalog-loading">Preparing your checkout…</div></main>;
-  if (!customer) return <main className="checkout-page"><Link className="checkout-brand" href="/" aria-label="തട്ട് home"><ThattBrand /></Link><section className="checkout-auth"><span className="section-tag">YOUR ORDER</span><h1>Sign in to continue</h1><p>We need an account to save your delivery address and order details. Guest checkout is not available.</p><button className="plum-button" onClick={() => setAuthOpen(true)}>Sign in with email <span>→</span></button></section>{authOpen && <AuthDialog onClose={() => setAuthOpen(false)} onSignedIn={signedIn} />}</main>;
-  if (orderId) return <main className="checkout-page"><Link className="checkout-brand" href="/" aria-label="תട്ട് home"><ThattBrand /></Link><section className="order-success"><span>✓</span><p className="section-tag">ORDER CONFIRMED</p><h1>Thank you, {customer.username}.</h1><p>Your order <strong>#{orderId}</strong> is confirmed. {fulfillment === "preorder" ? "We’ll prepare for your selected future time." : "We’ll prepare your fresh catch as soon as possible."}</p>{orderWhatsAppUrl && <div className="order-whatsapp"><a className="plum-button" href={orderWhatsAppUrl} target="_blank" rel="noopener noreferrer">Continue on WhatsApp <span>↗</span></a><small>We prepared the order details for +{ADMIN_WHATSAPP_NUMBER}. WhatsApp opens with a draft; tap Send to notify the admin. Telegram notification continues separately.</small></div>}<Link className="plum-button" href="/">Back to today’s catch →</Link></section></main>;
-  return <main className="checkout-page"><header className="checkout-header"><Link className="checkout-brand" href="/" aria-label="തട്ട് home"><ThattBrand /></Link><span>SECURE CHECKOUT</span></header><div className="checkout-layout"><form className="checkout-form" onSubmit={placeOrder}>
+  if (!customer) return <main className="checkout-page"><Link className="checkout-brand" href="/" aria-label="machli home"><MachliBrand /><span className="machli-name">machli</span></Link><section className="checkout-auth"><span className="section-tag">YOUR ORDER</span><h1>Sign in to continue</h1><p>We need an account to save your delivery address and order details. Guest checkout is not available.</p><button className="plum-button" onClick={() => setAuthOpen(true)}>Sign in with email <span>→</span></button></section>{authOpen && <AuthDialog onClose={() => setAuthOpen(false)} onSignedIn={signedIn} />}</main>;
+  if (orderId) return <main className="checkout-page"><Link className="checkout-brand" href="/" aria-label="machli home"><MachliBrand /><span className="machli-name">machli</span></Link><section className="order-success"><span>✓</span><p className="section-tag">ORDER CONFIRMED</p><h1>Thank you, {customer.username}.</h1><p>Your order <strong>#{orderId}</strong> is confirmed. {fulfillment === "preorder" ? "We’ll prepare for your selected future time." : "We’ll prepare your fresh catch as soon as possible."}</p>{orderWhatsAppUrl && <div className="order-whatsapp"><a className="plum-button" href={orderWhatsAppUrl} target="_blank" rel="noopener noreferrer">Continue on WhatsApp <span>↗</span></a><small>We prepared the order details for +{ADMIN_WHATSAPP_NUMBER}. WhatsApp opens with a draft; tap Send to notify the admin. Telegram notification continues separately.</small></div>}<Link className="plum-button" href="/">Back to today’s catch →</Link></section></main>;
+  return <main className="checkout-page"><header className="checkout-header"><Link className="checkout-brand" href="/" aria-label="machli home"><MachliBrand /><span className="machli-name">machli</span></Link><span>SECURE CHECKOUT</span></header><div className="checkout-layout"><form className="checkout-form" onSubmit={placeOrder}>
     <div className="checkout-heading"><span className="section-tag">ALMOST AT YOUR DOOR</span><h1>Checkout</h1><p>Review your delivery and timing preferences.</p></div>
     <section className="checkout-card"><div className="checkout-card-title"><span>01</span><div><h2>Delivery address</h2><p>Where should we bring your fresh catch?</p></div></div>
       {addresses.length > 0 && <div className="checkout-label"><span>SAVED ADDRESSES</span><ThemedSelect className="checkout-address-select" value={addressId} onValueChange={(value) => { setAddressId(value); setNewAddress(value === "new"); const address = addresses.find((item) => String(item.id) === value); setCoordinates(value === "new" ? null : address?.latitude && address.longitude ? { latitude: Number(address.latitude), longitude: Number(address.longitude) } : null); }} label="Choose a saved delivery address" options={[{ value: "new", label: "＋ Add a new address" }, ...addresses.map((address) => ({ value: String(address.id), label: `${address.label} · ${address.address_line1}, ${address.city}${address.is_default ? " · Default" : ""}` }))]} /></div>}

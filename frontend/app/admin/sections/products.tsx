@@ -11,7 +11,7 @@ type Props = { onError: (message: string) => void };
 function productImageUrl(value: string | null | undefined) {
   if (!value) return "";
   try {
-    const url = new URL(value, "http://thatt.local");
+    const url = new URL(value, "http://machli.local");
     return url.pathname.startsWith("/media/") ? `${url.pathname}${url.search}` : value;
   } catch {
     return value;

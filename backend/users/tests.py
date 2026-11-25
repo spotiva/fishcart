@@ -71,3 +71,47 @@ class CustomerEmailOTPTests(TestCase):
         self.assertTrue(user.is_staff)
         self.assertTrue(user.is_superuser)
         self.assertIsNone(user.phone_number)
+
+
+class APIEndpointPermissionTests(TestCase):
+    """Keep customer and staff API routes private unless explicitly public."""
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_customer_account_cart_and_order_endpoints_require_authentication(self):
+        protected_requests = [
+            ("get", "/api/auth/me/", None),
+            ("get", "/api/auth/addresses/", None),
+            ("post", "/api/auth/addresses/", {}),
+            ("get", "/api/cart/", None),
+            ("post", "/api/cart/items/", {}),
+            ("get", "/api/orders/", None),
+            ("post", "/api/orders/", {}),
+            ("get", "/api/orders/delivery-area/", None),
+            ("post", "/api/orders/delivery-quote/", {}),
+        ]
+
+        for method, url, payload in protected_requests:
+            with self.subTest(method=method, url=url):
+                response = getattr(self.client, method)(url, payload, format="json") if payload is not None else getattr(self.client, method)(url)
+                self.assertEqual(response.status_code, 401)
+
+    def test_staff_management_endpoints_require_staff_session(self):
+        protected_requests = [
+            ("get", "/api/staff/me/", None),
+            ("get", "/api/staff/dashboard/", None),
+            ("get", "/api/staff/users/", None),
+            ("post", "/api/staff/categories/", {}),
+            ("patch", "/api/staff/delivery-area/", {}),
+        ]
+
+        for method, url, payload in protected_requests:
+            with self.subTest(method=method, url=url):
+                response = getattr(self.client, method)(url, payload, format="json") if payload is not None else getattr(self.client, method)(url)
+                self.assertEqual(response.status_code, 403)
+
+    def test_catalog_reads_and_csrf_bootstrap_remain_public(self):
+        for url in ("/api/auth/csrf/", "/api/catalog/categories/", "/api/catalog/products/"):
+            with self.subTest(url=url):
+                self.assertEqual(self.client.get(url).status_code, 200)

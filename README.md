@@ -1,6 +1,6 @@
-# തട്ട് — Fresh Seafood from Munambam
+# machli — Fresh Seafood from Munambam
 
-തട്ട് (Thatt) is a local seafood storefront based in Munambam, Kerala. It offers fresh sea and freshwater fish sourced from the coast, with customer-selected weight, cleaning and cutting, saved delivery locations, local delivery, and future preorders. The catalog can also support other categories such as pickles. Customers can browse and filter products, manage their profile and addresses, place orders, and review completed purchases. Staff manage products, categories, fish preparation options, customers, delivery settings, and orders in a custom dashboard.
+Machli is a local seafood storefront based in Munambam, Kerala. It offers fresh sea and freshwater fish sourced from the coast, with customer-selected weight, cleaning and cutting, saved delivery locations, local delivery, and future preorders. The catalog can also support other categories such as pickles. Customers can browse and filter products, manage their profile and addresses, place orders, and review completed purchases. Staff manage products, categories, fish preparation options, customers, delivery settings, and orders in a custom dashboard.
 
 ## Stack
 
@@ -12,10 +12,12 @@
 
 ## Run with Docker Compose
 
-From the repository root, create a local environment file if you do not already have one. Replace the example secrets with unique local values before use:
+From the repository root, create the two private environment files if you do not already have them. Fill them using the variable list below before starting Compose:
 
 ```powershell
-Copy-Item .env.example .env
+New-Item -ItemType File -Force .env
+New-Item -ItemType File -Force backend/.env
+# Fill the variables described under Environment configuration, then run:
 docker compose up --build -d
 ```
 
@@ -60,7 +62,7 @@ py -3.12 -m venv .venv
 python -m pip install -r backend\requirements.txt
 ```
 
-Copy `.env.example` to `.env` if a local environment file does not already exist. In the first terminal, start Django with SQLite:
+Create `backend/.env` if it does not exist and fill the required Django variables described under Environment configuration. In the first terminal, start Django with SQLite:
 
 ```powershell
 Set-Location backend
@@ -80,19 +82,65 @@ Next.js proxies `/api` requests to `http://127.0.0.1:8000` by default. Set `BACK
 
 ## Environment configuration
 
-Use separate private environment files for each responsibility; all are ignored by Git. Copy each template to the named private file. For example, copy `.env.example` to `.env`, `backend/.env.example` to `backend/.env`, and `frontend/.env.example` to `frontend/.env.local`:
+Private environment files are intentionally excluded from this repository. Create them locally or enter the same variables in your deployment platform's secret/environment settings:
 
-| File | Copy from | Used for |
-| --- | --- | --- |
-| Project root `.env` | `.env.example` | Docker Compose interpolation: PostgreSQL database/user/password and public storefront values passed at frontend build time. |
-| `backend/.env` | `backend/.env.example` | Django secret key, trusted hosts, OTP settings, SMTP and notification provider credentials. Docker Compose loads this file into the backend only. |
-| `frontend/.env.local` | `frontend/.env.example` | Public `NEXT_PUBLIC_*` settings while running Next.js locally with `npm run dev`. Never put secrets here; these values are compiled into browser code. |
+```powershell
+New-Item -ItemType File -Force .env
+New-Item -ItemType Directory -Force backend
+New-Item -ItemType File -Force backend/.env
+New-Item -ItemType File -Force frontend/.env.local
+```
 
-Django reads `backend/.env` when run locally. Inside Docker, Compose injects `backend/.env` values into the backend container and passes database values from the root `.env` as explicit service environment. Local Django defaults to SQLite; Docker Compose sets `DB_ENGINE=postgres` and `POSTGRES_HOST=db`.
+Use the files this way:
 
-`NEXT_PUBLIC_STORE_PHONE` is the public contact number (currently `9539833135`; the storefront formats it for India). `NEXT_PUBLIC_SITE_URL` is the canonical site origin, for example `https://thatt.example`, without a path; set it before a production frontend build so canonical metadata, sitemap, and robots URLs are correct. The banner is a static asset at `frontend/public/images/banner.webp`; replace that file to change the banner. The logo is `frontend/public/thatt-logo.webp`.
+| File | Purpose |
+| --- | --- |
+| Project root `.env` | Docker Compose interpolation: PostgreSQL database name/user/password and public storefront build values. |
+| `backend/.env` | Django runtime settings and private credentials. Compose loads this file into the backend container only. |
+| `frontend/.env.local` | Optional values for local Next.js development. Never put secrets here; `NEXT_PUBLIC_*` values are compiled into browser code. |
 
-Compose requires `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` in the root `.env`. It passes those to both the backend (to connect) and database container (to initialize Postgres); the backend `.env` remains isolated from the frontend and database service. If a Compose `.env` value contains `$`, escape it as `$$` so Compose passes a literal dollar sign. Production startup rejects placeholder database, Django, and OTP secrets. Also use HTTPS, exact trusted hosts and origins, secure cookies, a production media-storage service, and least-privilege database credentials.
+For Docker Compose, put these values in the project-root `.env`:
+
+```dotenv
+POSTGRES_DB=fish_ecommerce
+POSTGRES_USER=fish_ecommerce
+POSTGRES_PASSWORD=<unique-database-password>
+NEXT_PUBLIC_STORE_PHONE=9539833135
+NEXT_PUBLIC_SITE_URL=https://your-store-domain.example
+```
+
+Put the backend values in `backend/.env`. Generate unique secret values; do not use these labels as literal secrets:
+
+```dotenv
+DJANGO_SECRET_KEY=<unique-random-secret-at-least-50-characters>
+DJANGO_DEBUG=false
+DJANGO_ALLOWED_HOSTS=your-store-domain.example,backend
+CSRF_TRUSTED_ORIGINS=https://your-store-domain.example
+OTP_PEPPER=<different-random-secret-at-least-32-characters>
+JWT_COOKIE_SECURE=true
+JWT_COOKIE_SAMESITE=Lax
+OTP_TTL_SECONDS=300
+OTP_MAX_ATTEMPTS=5
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=<your-smtp-host>
+EMAIL_PORT=587
+EMAIL_HOST_USER=<your-smtp-username>
+EMAIL_HOST_PASSWORD=<your-smtp-password-or-app-password>
+EMAIL_USE_TLS=true
+EMAIL_USE_SSL=false
+DEFAULT_FROM_EMAIL=Machli <no-reply@your-store-domain.example>
+ORDER_NOTIFICATION_PROVIDER=telegram
+TELEGRAM_BOT_TOKEN=<telegram-bot-token>
+TELEGRAM_ADMIN_CHAT_ID=<admin-chat-id>
+```
+
+For Gmail SMTP, use an app password where Google requires it, not your regular account password. Set `ORDER_NOTIFICATION_PROVIDER=disabled` if you do not want Telegram alerts. Order confirmation also offers the customer a WhatsApp Web link with a prefilled message; the customer must press Send. It does not send automatically through Meta Cloud API.
+
+When running Next.js outside Docker, set `BACKEND_URL=http://127.0.0.1:8000` and the public `NEXT_PUBLIC_*` values in `frontend/.env.local`. In Compose, the frontend uses the internal backend service address; root `.env` values are passed as build arguments. Rebuild the frontend after changing `NEXT_PUBLIC_*` values because Next.js embeds them in the build.
+
+Compose passes `DB_ENGINE=postgres`, `POSTGRES_HOST=db`, and the root database credentials to Django. The same database name, user, and password are passed to the PostgreSQL container so both services connect to the same database. Do not duplicate those values in `backend/.env`. If a Compose `.env` value contains `$`, escape it as `$$` so Compose passes a literal dollar sign.
+
+For production, use your hosting platform's secret manager where possible; otherwise restrict access to the private env files on the server. Set exact hostnames and HTTPS origins, enable HTTPS at the deployment boundary, use strong unique credentials and least-privilege database access, and configure durable object storage for uploaded product/profile images. The project intentionally has no committed `.env.example` files.
 
 ## Customer authentication and staff access
 
@@ -124,13 +172,13 @@ Address forms use OpenStreetMap tiles for interactive pin placement. No Google M
 
 ### Order notifications
 
-Order alerts support a provider switch with separate Telegram and WhatsApp adapters. Telegram is selected by default in `.env.example`; set `ORDER_NOTIFICATION_PROVIDER=telegram`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_ADMIN_CHAT_ID` in the private `.env`. Create a bot with Telegram's [@BotFather instructions](https://core.telegram.org/bots#how-do-i-create-a-bot), open it and send `/start`, then obtain the private chat ID from the bot's updates. For a group chat, add the bot and use that group's chat ID. Keep the bot token secret. Telegram alerts include order/customer details, items and processing options, amount breakdown, fulfillment schedule, delivery address, coordinates, and an OpenStreetMap location link when coordinates are present.
+Telegram is the automatic server-side order alert. Set `ORDER_NOTIFICATION_PROVIDER=telegram`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_ADMIN_CHAT_ID` in the private `backend/.env` (or deployment secrets). Create a bot with Telegram's [@BotFather instructions](https://core.telegram.org/bots#how-do-i-create-a-bot), open it and send `/start`, then obtain the private chat ID from the bot's updates. Telegram alerts include order/customer details, items, totals, fulfillment schedule, address, coordinates, and an OpenStreetMap link when coordinates are present. Use `ORDER_NOTIFICATION_PROVIDER=disabled` to turn server alerts off.
 
-For WhatsApp, set `ORDER_NOTIFICATION_PROVIDER=whatsapp` and configure `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ADMIN_PHONE`, `WHATSAPP_ORDER_TEMPLATE`, and `WHATSAPP_TEMPLATE_LANGUAGE` in `.env`. This adapter requires a Meta Cloud API account and an approved template with seven body placeholders in order: order ID, customer username, customer email, delivery address, map link, items, and total. `WHATSAPP_GRAPH_API_VERSION` is configurable. Choose `ORDER_NOTIFICATION_PROVIDER=disabled` to turn order alerts off. Never commit provider credentials. Notifications are attempted after an order transaction commits; provider failures do not roll back the order.
+WhatsApp uses a customer-initiated WhatsApp Web link after order placement. The site pre-fills an order message for the admin; the customer must review and press Send. No Meta Cloud API credentials or automatic WhatsApp server sender are used.
 
 ## API and API collection
 
-Customer endpoints are mounted under `/api/auth/`, `/api/catalog/`, `/api/cart/`, and `/api/orders/`. The staff API is mounted under `/api/staff/`. See the Postman collection and its usage notes in [`docs/postman`](docs/postman/README.md).
+Customer endpoints are mounted under `/api/auth/`, `/api/catalog/`, `/api/cart/`, and `/api/orders/`. The staff API is mounted under `/api/staff/`. The Postman collection is kept locally under `docs/postman/` and is intentionally excluded from Git.
 
 Common endpoints:
 
@@ -150,7 +198,7 @@ Common endpoints:
 ## Development notes
 
 - Django migrations are in each backend app's `migrations/` folder. After model changes, create and review migrations, then apply them.
-- Add real product images through the staff catalog dashboard. The storefront hero uses the static asset `frontend/public/images/banner.webp`; replace that file with your banner image and rebuild the frontend container. If it is absent, the page displays its gradient fallback. The site logo is `frontend/public/thatt-logo.webp`.
+- Add real product images through the staff catalog dashboard. The storefront hero uses the static asset `frontend/public/images/banner.webp`; replace that file with your banner image and rebuild the frontend container. If it is absent, the page displays its gradient fallback. The site logo is `frontend/public/images/machli-logo.jpeg`.
 - Customer access tokens are kept in frontend memory; do not persist them in local storage.
 - The `.gitignore` excludes secrets, virtual environments, local databases/media, caches, and generated frontend output. Commit source, migrations, lockfiles, documentation, and non-sensitive static assets.
 

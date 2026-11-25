@@ -46,7 +46,7 @@ export function AuthDialog({ onClose, onSignedIn }: { onClose: () => void; onSig
   return <div className="modal-backdrop customer-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <section className="customer-auth-card" role="dialog" aria-modal="true" aria-labelledby="auth-title">
       <button className="customer-close" onClick={onClose} aria-label="Close sign in">×</button>
-      <span className="eyebrow">തട്ട് ACCOUNT</span><h2 id="auth-title">{sent ? "Enter your code" : "Sign in with email"}</h2>
+      <span className="eyebrow">machli ACCOUNT</span><h2 id="auth-title">{sent ? "Enter your code" : "Sign in with email"}</h2>
       <p>{sent ? `We sent a one-time code to ${email}.` : "Your account keeps your addresses and orders together."}</p>
       <form onSubmit={submit}>
         {!sent ? <label>Email address<input type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value.trim())} required maxLength={254} /></label> : <label>6-digit verification code<input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} required pattern="\d{6}" autoFocus /></label>}

@@ -1,8 +1,9 @@
-# Environment files and local secrets (keep only safe templates)
+# Private environment files and local secrets
 .env
 .env.*
-!.env.example
-!**/.env.example
+
+# Local Postman collection and credentials
+docs/postman/
 
 # Python / Django
 __pycache__/

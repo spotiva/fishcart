@@ -1,7 +1,6 @@
 """Replaceable adapters for order alerts sent to staff messaging providers."""
 import json
 import logging
-import re
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -80,58 +79,11 @@ def send_admin_order_telegram(order_id):
         return False
 
 
-def send_admin_order_whatsapp(order_id):
-    """Send through Meta Cloud API; requires configured credentials and approved template."""
-    required = (settings.WHATSAPP_ACCESS_TOKEN, settings.WHATSAPP_PHONE_NUMBER_ID,
-                settings.WHATSAPP_ADMIN_PHONE, settings.WHATSAPP_ORDER_TEMPLATE)
-    if not all(required):
-        logger.warning("WhatsApp order notifications are enabled but required settings are incomplete.")
-        return False
-    recipient = re.sub(r"\D", "", settings.WHATSAPP_ADMIN_PHONE)
-    if not re.fullmatch(r"[1-9]\d{7,14}", recipient):
-        logger.warning("WhatsApp order notification recipient is not in international phone format.")
-        return False
-    order = _load_order(order_id)
-    address = order.address_snapshot
-    coordinates = (address.get("latitude"), address.get("longitude"))
-    map_link = f"https://www.openstreetmap.org/?mlat={coordinates[0]}&mlon={coordinates[1]}#map=15/{coordinates[0]}/{coordinates[1]}" if all(coordinates) else "Location pin unavailable"
-    item_lines = []
-    for item in order.items.all():
-        options = ", ".join(option.name for option in item.options.all())
-        item_lines.append(f"{item.quantity} {item.unit} {item.product_name}" + (f" ({options})" if options else ""))
-    fulfillment = "Preorder" if order.is_preorder else "Order now"
-    if order.scheduled_for:
-        fulfillment += f" for {timezone.localtime(order.scheduled_for).strftime('%d %b %Y, %I:%M %p %Z')}"
-    if order.customer_note:
-        fulfillment += f"; note: {order.customer_note}"
-    values = [str(order.pk), order.user.username, order.user.email or "Email unavailable",
-              ", ".join(str(address.get(key) or "") for key in ("address_line1", "address_line2", "landmark", "city", "state", "postal_code", "country_code"))[:900],
-              map_link, ("; ".join(item_lines) + f". {fulfillment}")[:900], f"INR {order.total:.2f}"]
-    payload = {"messaging_product": "whatsapp", "to": recipient,
-               "type": "template", "template": {"name": settings.WHATSAPP_ORDER_TEMPLATE,
-               "language": {"code": settings.WHATSAPP_TEMPLATE_LANGUAGE},
-               "components": [{"type": "body", "parameters": [{"type": "text", "text": value} for value in values]}]}}
-    try:
-        request = Request(
-            f"https://graph.facebook.com/{settings.WHATSAPP_GRAPH_API_VERSION}/{settings.WHATSAPP_PHONE_NUMBER_ID}/messages",
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Authorization": f"Bearer {settings.WHATSAPP_ACCESS_TOKEN}", "Content-Type": "application/json"},
-            method="POST",
-        )
-        with urlopen(request, timeout=5) as response:
-            return 200 <= response.status < 300
-    except (HTTPError, URLError, TimeoutError):
-        logger.warning("WhatsApp provider request failed for order_id=%s", order_id)
-        return False
-
-
 def send_admin_order_notification(order_id):
     """Select the configured provider; provider SDK/API details stay behind adapters."""
     provider = settings.ORDER_NOTIFICATION_PROVIDER
     if provider == "telegram":
         return send_admin_order_telegram(order_id)
-    if provider == "whatsapp":
-        return send_admin_order_whatsapp(order_id)
     if provider == "disabled":
         return False
     logger.error("Unsupported order notification provider configured.")

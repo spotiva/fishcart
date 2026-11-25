@@ -51,10 +51,10 @@ def send_login_otp_email(email: str, code: str) -> None:
     from django.template.loader import render_to_string
 
     expiry_minutes = max(1, (settings.OTP_TTL_SECONDS + 59) // 60)
-    logo_path = Path(__file__).parent / "email_assets" / "thatt-logo.webp"
-    context = {"code": code, "expiry_minutes": expiry_minutes, "brand_name": "തട്ട്", "has_logo": logo_path.is_file()}
+    logo_path = Path(__file__).parent / "email_assets" / "machli-logo.jpeg"
+    context = {"code": code, "expiry_minutes": expiry_minutes, "brand_name": "machli", "has_logo": logo_path.is_file()}
     message = EmailMultiAlternatives(
-        subject="Your തട്ട് sign-in code",
+        subject="Your machli sign-in code",
         body=render_to_string("users/emails/otp.txt", context),
         from_email=settings.DEFAULT_FROM_EMAIL,
         to=[email],
@@ -64,11 +64,11 @@ def send_login_otp_email(email: str, code: str) -> None:
     # Attach the logo inline when its optional email asset is present. Keeping
     # this as a local asset avoids external image requests from mail clients.
     if logo_path.is_file():
-        logo = MIMEBase("image", "webp")
+        logo = MIMEBase("image", "jpeg")
         logo.set_payload(logo_path.read_bytes())
         encoders.encode_base64(logo)
-        logo.add_header("Content-ID", "<thatt-logo>")
-        logo.add_header("Content-Disposition", "inline", filename="thatt-logo.webp")
+        logo.add_header("Content-ID", "<machli-logo>")
+        logo.add_header("Content-Disposition", "inline", filename="machli-logo.jpeg")
         message.attach(logo)
     if message.send(fail_silently=False) != 1:
         raise RuntimeError("The login email could not be sent.")

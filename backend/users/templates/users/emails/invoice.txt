@@ -1,4 +1,4 @@
-തട്ട് | Order invoice
+machli | Order invoice
 
 Invoice {{ invoice_number }}
 Order {{ order_number }} · {{ order_date }}
