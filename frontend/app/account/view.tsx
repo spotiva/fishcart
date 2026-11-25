@@ -32,6 +32,21 @@ export default function AccountView() {
   const [notice, setNotice] = useState("");
   const [authOpen, setAuthOpen] = useState(false);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("section") === "addresses") setSection("addresses");
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("add") !== "1" || !customer || loading) return;
+    setSection("addresses");
+    setEditingAddress(null);
+    setAddressForm(blankAddress(customer));
+    setCoordinates(null);
+    window.history.replaceState(null, "", "/account?section=addresses");
+  }, [customer, loading]);
+
   const loadAccount = useCallback(async () => {
     setLoading(true); setError("");
     try {
