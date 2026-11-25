@@ -84,7 +84,7 @@ export default function AdminDashboard() {
   return (
     <div className="dashboard-shell">
       <aside className="sidebar">
-        <div className="sidebar-brand"><MachliBrand className="admin-sidebar-logo" /><span>machli<small>STAFF CONSOLE</small></span></div>
+        <div className="sidebar-brand"><MachliBrand className="admin-sidebar-logo" /><span>machli<small>STAFF CONSOLE</small></span><strong className="mobile-admin-label">Admin panel</strong></div>
         <div className="sidebar-location"><span className="location-dot" /> OPERATIONS <span className="chevron">⌄</span></div>
         {(["WORKSPACE", "CATALOG", "PEOPLE"] as const).map((group) => <div className="nav-group" key={group}>
           <p className="nav-caption">{group}</p>
@@ -93,7 +93,7 @@ export default function AdminDashboard() {
         <div className="sidebar-bottom"><div className="staff-avatar">{staff.username.slice(0, 1).toUpperCase()}</div><div className="staff-meta"><strong>{staff.username}</strong><span>{staff.is_superuser ? "Superuser" : "Staff account"}</span></div><button className="logout-button" onClick={signOut} aria-label="Sign out">↪</button></div>
       </aside>
       <main className="main-area">
-        <header className="topbar"><div><span className="crumb">machli <span>/</span> {current.label}</span><h1>{section === "overview" ? "Good morning" : current.label}<span className="wave-emoji">{section === "overview" ? " ☀" : ""}</span></h1></div><div className="topbar-right"><span className="today-label">{new Intl.DateTimeFormat("en", { weekday: "short", month: "short", day: "numeric" }).format(new Date())}</span><div className="top-avatar">{staff.username.slice(0, 1).toUpperCase()}</div></div></header>
+        <header className="topbar"><div><span className="crumb">machli <span>/</span> {current.label}</span><h1>{section === "overview" ? "Good morning" : current.label}<span className="wave-emoji">{section === "overview" ? " ☀" : ""}</span></h1></div><div className="topbar-right"><span className="today-label">{new Intl.DateTimeFormat("en", { weekday: "short", month: "short", day: "numeric" }).format(new Date())}</span><div className="top-avatar">{staff.username.slice(0, 1).toUpperCase()}</div><button className="mobile-logout" onClick={signOut}>Sign out <span aria-hidden="true">↪</span></button></div></header>
         {error && <div className="inline-error" role="alert">{error}<button onClick={() => setError("")}>×</button></div>}
         <div key={section} className="page-content">
           {section === "overview" && <Overview stats={stats} onOpen={setSection} />}

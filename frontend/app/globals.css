@@ -214,3 +214,60 @@ html{scroll-behavior:smooth}body{font-family:'Plus Jakarta Sans','DM Sans',sans-
 .image-preview-empty>span{font-size:21px;color:#5f9184}
 .image-preview-empty small{font-size:9px;line-height:1.45}
 @media(max-width:520px){.image-preview{flex-wrap:wrap}.image-preview img{width:88px;height:76px}.image-preview .secondary-button{margin-left:auto}}
+
+/* Small-screen storefront, staff navigation, and weight notices */
+@media(max-width:430px){.shop-actions>.signin-pill{font-size:9px;padding:0 9px;min-width:56px;justify-content:center}}
+.weight-variation-note{margin:8px 0 12px;padding:10px 12px;border:1px solid #f0e2c4;border-radius:10px;background:#fff9ec;color:#756044;font-size:11px;line-height:1.55}
+.customize-card>.weight-variation-note{margin:8px 0;padding:8px 10px;font-size:10px}
+.cart-drawer>.weight-variation-note{margin:5px 0 8px}
+.order-summary>.weight-variation-note{margin:8px 0}
+.mobile-logout{display:none;align-items:center;justify-content:center;gap:5px;min-height:34px;padding:0 10px;border:1px solid #ecdde9;border-radius:9px;background:white;color:#7e2779;font-size:10px;font-weight:700;white-space:nowrap}
+.mobile-admin-label{display:none}
+@media(max-width:780px){
+  .dashboard-shell{display:flex;flex-direction:column;min-height:100dvh}
+  .sidebar{position:sticky;z-index:20;top:0;width:100%;height:auto;min-height:0;flex:0 0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:8px 10px 7px;border-right:0;border-bottom:1px solid #ffffff24}
+  .sidebar-brand{grid-column:1/-1;min-height:26px;padding:0 5px 3px;gap:0;font-size:14px}
+  .sidebar-brand .admin-sidebar-logo,.sidebar-brand>span:last-child{display:none}
+  .mobile-admin-label{display:block;color:white;font:700 12px Manrope,sans-serif;letter-spacing:.2px}
+  .sidebar-location,.sidebar-bottom{display:none}
+  .nav-group{display:contents}
+  .nav-caption{display:none}
+  .nav-item,.nav-item:not(.active),.nav-item.active{display:flex;flex-direction:column;justify-content:center;gap:3px;height:39px;min-width:0;padding:3px 1px;font-size:9px;line-height:1.1;text-align:center;white-space:nowrap}
+  .nav-icon{width:auto;font-size:14px}
+  .nav-count{position:absolute;transform:translate(16px,-10px);margin:0;min-width:14px;height:14px;font-size:8px}
+  .main-area{width:100%;min-width:0}
+  .topbar{height:78px;padding:12px 14px}
+  .topbar h1{font-size:19px;margin-top:5px}
+  .topbar-right{gap:8px}
+  .top-avatar{width:32px;height:32px}
+  .mobile-logout{display:inline-flex}
+  .page-content{width:100%;padding:17px 12px 28px}
+  .overview-grid{grid-template-columns:1fr}
+  .directory-panel .table-scroll{overflow:visible}
+  .directory-panel table{width:100%;min-width:0}
+  .directory-panel thead{display:none}
+  .directory-panel tbody{display:grid;gap:10px;padding:10px}
+  .directory-panel tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;padding:12px;border:1px solid #f0e7ef;border-radius:12px;background:#fff}
+  .directory-panel tbody td{min-width:0;padding:5px 3px;border:0;font-size:11px;overflow-wrap:anywhere}
+  .directory-panel .customer-cell{min-width:0}
+  .directory-customers tbody td:nth-child(1){grid-column:1/-1}
+  .directory-customers tbody td:nth-child(2){grid-column:1/-1;padding-left:48px}
+  .directory-customers tbody td:nth-child(3),.directory-customers tbody td:nth-child(4){display:none}
+  .directory-customers tbody td:nth-child(5){grid-column:1}
+  .directory-customers tbody td:nth-child(6){grid-column:2;justify-self:end}
+  .directory-addresses tbody td:nth-child(1),.directory-addresses tbody td:nth-child(2){grid-column:1/-1}
+  .directory-addresses tbody td:nth-child(3){grid-column:1}
+  .directory-addresses tbody td:nth-child(4){grid-column:2;justify-self:end}
+  .directory-addresses tbody td:nth-child(5){grid-column:1/-1}
+  .directory-panel tbody tr:has(td[colspan]){display:block}
+}
+@media(max-width:520px){
+  .topbar{padding:11px 10px}
+  .topbar h1{font-size:17px}
+  .mobile-logout{min-height:32px;padding:0 8px;font-size:9px}
+  .page-content{padding:14px 10px 24px}
+  .form-grid{grid-template-columns:1fr}
+  .form-grid .span-two{grid-column:auto}
+  .table-panel>.panel-heading{padding:14px 13px}
+  .pager{padding:10px 11px;gap:8px}
+}
