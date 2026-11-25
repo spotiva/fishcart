@@ -298,29 +298,18 @@ if not DEBUG and (
     raise ValueError("Production OTP_PEPPER must be a unique secret of at least 32 characters")
 
 
-# Email delivery
-EMAIL_BACKEND = os.getenv(
-    "EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend"
+# Email delivery through the Resend HTTPS API
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+RESEND_FROM_EMAIL = os.getenv(
+    "RESEND_FROM_EMAIL",
+    "Machli <onboarding@resend.dev>" if DEBUG else "",
 )
-EMAIL_HOST = os.getenv("EMAIL_HOST", "")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
-EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
-EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Machli <no-reply@example.com>")
 
-if EMAIL_USE_TLS and EMAIL_USE_SSL:
-    raise ValueError("EMAIL_USE_TLS and EMAIL_USE_SSL cannot both be enabled")
+if not DEBUG and not RESEND_API_KEY:
+    raise ValueError("Production email OTP requires RESEND_API_KEY")
 
-if not DEBUG and not (EMAIL_HOST and EMAIL_HOST_USER and EMAIL_HOST_PASSWORD):
-    raise ValueError("Production email OTP requires EMAIL_HOST, EMAIL_HOST_USER, and EMAIL_HOST_PASSWORD")
-
-if not DEBUG and EMAIL_BACKEND == "django.core.mail.backends.console.EmailBackend":
-    raise ValueError("The console email backend is not allowed in production")
-
-if not DEBUG and not (EMAIL_USE_TLS or EMAIL_USE_SSL):
-    raise ValueError("Production SMTP must use TLS or SSL")
+if not DEBUG and not RESEND_FROM_EMAIL:
+    raise ValueError("Production email OTP requires RESEND_FROM_EMAIL")
 
 
 # Order notifications

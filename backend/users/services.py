@@ -1,13 +1,16 @@
 import hashlib
 import hmac
 import secrets
-from email import encoders
-from email.mime.base import MIMEBase
+import base64
 from datetime import timedelta
+from pathlib import Path
 
+import resend
 from django.conf import settings
 from django.db import transaction
+from django.core.exceptions import ImproperlyConfigured
 from django.utils import timezone
+from django.template.loader import render_to_string
 
 from .models import LoginOTP
 
@@ -44,31 +47,27 @@ def verify_login_otp(email: str, code: str) -> bool:
 
 
 def send_login_otp_email(email: str, code: str) -> None:
-    """Email adapter; never write the recipient or OTP to application logs."""
-    from pathlib import Path
-
-    from django.core.mail import EmailMultiAlternatives
-    from django.template.loader import render_to_string
+    """Send the branded OTP using Resend's HTTPS API, without logging secrets."""
+    if not settings.RESEND_API_KEY:
+        raise ImproperlyConfigured("RESEND_API_KEY is not configured")
 
     expiry_minutes = max(1, (settings.OTP_TTL_SECONDS + 59) // 60)
     logo_path = Path(__file__).parent / "email_assets" / "machli-logo.jpeg"
     context = {"code": code, "expiry_minutes": expiry_minutes, "brand_name": "machli", "has_logo": logo_path.is_file()}
-    message = EmailMultiAlternatives(
-        subject="Your machli sign-in code",
-        body=render_to_string("users/emails/otp.txt", context),
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[email],
-    )
-    message.attach_alternative(render_to_string("users/emails/otp.html", context), "text/html")
-
-    # Attach the logo inline when its optional email asset is present. Keeping
-    # this as a local asset avoids external image requests from mail clients.
+    params = {
+        "from": settings.RESEND_FROM_EMAIL,
+        "to": [email],
+        "subject": "Your machli sign-in code",
+        "text": render_to_string("users/emails/otp.txt", context),
+        "html": render_to_string("users/emails/otp.html", context),
+    }
     if logo_path.is_file():
-        logo = MIMEBase("image", "jpeg")
-        logo.set_payload(logo_path.read_bytes())
-        encoders.encode_base64(logo)
-        logo.add_header("Content-ID", "<machli-logo>")
-        logo.add_header("Content-Disposition", "inline", filename="machli-logo.jpeg")
-        message.attach(logo)
-    if message.send(fail_silently=False) != 1:
-        raise RuntimeError("The login email could not be sent.")
+        params["attachments"] = [{
+            "filename": logo_path.name,
+            "content": base64.b64encode(logo_path.read_bytes()).decode("ascii"),
+            "content_type": "image/jpeg",
+            "content_id": "machli-logo",
+        }]
+
+    resend.api_key = settings.RESEND_API_KEY
+    resend.Emails.send(params)

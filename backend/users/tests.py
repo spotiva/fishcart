@@ -2,22 +2,23 @@ import re
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.core import mail
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 
-@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+@override_settings(RESEND_API_KEY="test-resend-key")
 class CustomerEmailOTPTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
     def test_email_otp_registers_and_authenticates_customer_without_phone(self):
-        response = self.client.post("/api/auth/otp/request/", {"email": "Fresh.Customer@example.com"}, format="json")
+        with patch("users.services.resend.Emails.send") as send_email:
+            response = self.client.post("/api/auth/otp/request/", {"email": "Fresh.Customer@example.com"}, format="json")
         self.assertEqual(response.status_code, 202)
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn("fresh.customer@example.com", mail.outbox[0].to)
-        code = re.search(r"\b(\d{6})\b", mail.outbox[0].body).group(1)
+        send_email.assert_called_once()
+        params = send_email.call_args.args[0]
+        self.assertEqual(params["to"], ["fresh.customer@example.com"])
+        code = re.search(r"\b(\d{6})\b", params["text"]).group(1)
 
         response = self.client.post("/api/auth/otp/verify/", {"email": "FRESH.CUSTOMER@example.com", "code": code}, format="json")
 
@@ -30,14 +31,14 @@ class CustomerEmailOTPTests(TestCase):
 
     @patch("users.services.generate_otp", side_effect=["123456", "654321"])
     def test_resending_otp_invalidates_the_previous_code_and_sends_branded_html(self, _generate_otp):
-        self.client.post("/api/auth/otp/request/", {"email": "resend@example.com"}, format="json")
-        old_code = re.search(r"\b(\d{6})\b", mail.outbox[-1].body).group(1)
-        self.assertEqual(len(mail.outbox[-1].alternatives), 1)
-        self.assertIn("Your sign-in code", mail.outbox[-1].alternatives[0][0])
-        self.assertIn("resend@example.com", mail.outbox[-1].to)
-
-        self.client.post("/api/auth/otp/request/", {"email": "resend@example.com"}, format="json")
-        new_code = re.search(r"\b(\d{6})\b", mail.outbox[-1].body).group(1)
+        with patch("users.services.resend.Emails.send") as send_email:
+            self.client.post("/api/auth/otp/request/", {"email": "resend@example.com"}, format="json")
+            self.client.post("/api/auth/otp/request/", {"email": "resend@example.com"}, format="json")
+        old_params, new_params = [call.args[0] for call in send_email.call_args_list]
+        old_code = re.search(r"\b(\d{6})\b", old_params["text"]).group(1)
+        self.assertIn("Your sign-in code", old_params["html"])
+        self.assertEqual(old_params["to"], ["resend@example.com"])
+        new_code = re.search(r"\b(\d{6})\b", new_params["text"]).group(1)
         self.assertNotEqual(old_code, new_code)
 
         old_response = self.client.post("/api/auth/otp/verify/", {"email": "resend@example.com", "code": old_code}, format="json")
@@ -57,8 +58,10 @@ class CustomerEmailOTPTests(TestCase):
 
     def test_customer_otp_cannot_authenticate_staff_account(self):
         user = get_user_model().objects.create_user(username="staff-account", email="staff@example.com", is_staff=True)
-        self.client.post("/api/auth/otp/request/", {"email": user.email}, format="json")
-        code = re.search(r"\b(\d{6})\b", mail.outbox[-1].body).group(1)
+        with patch("users.services.resend.Emails.send") as send_email:
+            self.client.post("/api/auth/otp/request/", {"email": user.email}, format="json")
+        params = send_email.call_args.args[0]
+        code = re.search(r"\b(\d{6})\b", params["text"]).group(1)
 
         response = self.client.post("/api/auth/otp/verify/", {"email": user.email, "code": code}, format="json")
 

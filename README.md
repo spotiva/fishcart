@@ -122,20 +122,14 @@ JWT_COOKIE_SECURE=true
 JWT_COOKIE_SAMESITE=Lax
 OTP_TTL_SECONDS=300
 OTP_MAX_ATTEMPTS=5
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-EMAIL_HOST=<your-smtp-host>
-EMAIL_PORT=587
-EMAIL_HOST_USER=<your-smtp-username>
-EMAIL_HOST_PASSWORD=<your-smtp-password-or-app-password>
-EMAIL_USE_TLS=true
-EMAIL_USE_SSL=false
-DEFAULT_FROM_EMAIL=Machli <no-reply@your-store-domain.example>
+RESEND_API_KEY=<resend-api-key>
+RESEND_FROM_EMAIL=Machli <no-reply@your-verified-domain.example>
 ORDER_NOTIFICATION_PROVIDER=telegram
 TELEGRAM_BOT_TOKEN=<telegram-bot-token>
 TELEGRAM_ADMIN_CHAT_ID=<admin-chat-id>
 ```
 
-For Gmail SMTP, use an app password where Google requires it, not your regular account password. Set `ORDER_NOTIFICATION_PROVIDER=disabled` if you do not want Telegram alerts. Order confirmation also offers the customer a WhatsApp Web link with a prefilled message; the customer must press Send. It does not send automatically through Meta Cloud API.
+Verify the sender domain with Resend and add its DNS records before using the sender address. OTP emails use the Resend HTTPS API, so they work on Render Free where outbound SMTP ports are blocked. Set `ORDER_NOTIFICATION_PROVIDER=disabled` if you do not want Telegram alerts. Order confirmation also offers the customer a WhatsApp Web link with a prefilled message; the customer must press Send. It does not send automatically through Meta Cloud API.
 
 When running Next.js outside Docker, set `BACKEND_URL=http://127.0.0.1:8000` and the public `NEXT_PUBLIC_*` values in `frontend/.env.local`. In Compose, the frontend uses the internal backend service address; root `.env` values are passed as build arguments. Rebuild the frontend after changing `NEXT_PUBLIC_*` values because Next.js embeds them in the build.
 
@@ -145,7 +139,7 @@ For production, use your hosting platform's secret manager where possible; other
 
 ## Customer authentication and staff access
 
-Customers register or sign in with an email and a one-time code sent through the configured SMTP server. OTP values are not written to backend logs. A customer may add an optional E.164 profile phone number after sign-in; each delivery address still requires its own contact phone number. The API returns a short-lived access JWT for in-memory frontend use and stores the refresh JWT in an HttpOnly cookie. Refresh and other cookie-authenticated operations use CSRF protection.
+Customers register or sign in with an email and a one-time code sent through Resend's HTTPS API. OTP values are not written to backend logs. A customer may add an optional E.164 profile phone number after sign-in; each delivery address still requires its own contact phone number. The API returns a short-lived access JWT for in-memory frontend use and stores the refresh JWT in an HttpOnly cookie. Refresh and other cookie-authenticated operations use CSRF protection.
 
 Staff use Django username and password authentication. The custom dashboard uses the staff API and protects staff-only operations separately from customer endpoints. Create the first staff account with:
 

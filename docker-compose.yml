@@ -12,6 +12,7 @@ services:
         format: raw
     environment:
       DB_ENGINE: postgres
+      DB_PROVIDER: standard
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       <<: *postgres-environment
